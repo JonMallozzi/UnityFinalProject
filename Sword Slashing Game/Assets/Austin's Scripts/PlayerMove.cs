@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+
 public class PlayerMove : MonoBehaviour
 {
     [SerializeField] private string horizontalInputName;
@@ -16,9 +17,15 @@ public class PlayerMove : MonoBehaviour
 
     private bool isJumping;
 
+    private PlayerControls controller;
+    private Vector2 characterRotation;
+
     private void Awake()
     {
         cController = GetComponent<CharacterController>();
+        controller = new PlayerControls();
+        controller.Gameplay.Movement.performed += context => characterRotation = context.ReadValue<Vector2>();
+        controller.Gameplay.Movement.canceled += context => characterRotation = Vector2.zero;
     }
 
     private void Update()
@@ -36,6 +43,12 @@ public class PlayerMove : MonoBehaviour
         Vector3 rightMovement = transform.right * hInput;
 
         cController.SimpleMove(forwardMovement + rightMovement);
+
+        //rotate character when moving 
+        Vector2 rotation = new Vector2(0, characterRotation.x) * 100f * Time.deltaTime;
+        transform.Rotate(rotation, Space.World);
+
+
     }
 
     private void JumpInput() 
@@ -63,5 +76,16 @@ public class PlayerMove : MonoBehaviour
         cController.slopeLimit = 45.0f;
         isJumping = false;
         
+    }
+
+    //enabling and disabling the controller inputs
+    void OnEnable()
+    {
+        controller.Gameplay.Enable();
+    }
+
+    void OnDisable()
+    {
+        controller.Gameplay.Disable();
     }
 }

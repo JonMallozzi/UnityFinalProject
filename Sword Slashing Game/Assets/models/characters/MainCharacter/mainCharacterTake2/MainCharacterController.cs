@@ -1,15 +1,22 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class MainCharacterController : MonoBehaviour {
 
-   private Vector3 moveDirection = Vector3.zero;
-
    private Animator anim;
 
-    void Start() {
+   private PlayerControls controller;
+   private bool attackButton;
+   private bool moveButton;
+
+    void Awake() {
         anim = GetComponent<Animator>();
+        controller = new PlayerControls();
+        controller.Gameplay.SwordSwing.performed += contex => attackButton = true;
+        controller.Gameplay.Movement.performed += contex => anim.SetInteger("Condition",1);
+        controller.Gameplay.Movement.canceled += contex => anim.SetInteger("Condition", 0);
     }
     
     void Update() {
@@ -19,7 +26,7 @@ public class MainCharacterController : MonoBehaviour {
 
     void Movement ()
     {
-        if (Input.GetKey(KeyCode.W))
+        if (Input.GetKey(KeyCode.W) || moveButton)
         {
             if (anim.GetBool("Attacking"))
             {
@@ -27,9 +34,10 @@ public class MainCharacterController : MonoBehaviour {
             }
             anim.SetBool("Running", true);
             anim.SetInteger("Condition", 1);
+            Debug.Log(anim.GetInteger("Condition"));
         }
 
-        if (Input.GetKeyUp(KeyCode.W))
+        if (Input.GetKeyUp(KeyCode.W) || moveButton != false)
         {
             anim.SetBool("Running", false);
             anim.SetInteger("Condition", 0);
@@ -38,7 +46,7 @@ public class MainCharacterController : MonoBehaviour {
 
     void Attacking()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) || attackButton)
         { 
 
             if (anim.GetBool("Running") == true)
@@ -65,6 +73,18 @@ public class MainCharacterController : MonoBehaviour {
         yield return new WaitForSeconds(0.1f);
         anim.SetInteger("Condition", 0);
         anim.SetBool("Attacking", false);
+        attackButton = false;
+    }
+
+    //enabling and disabling the controller inputs
+    void OnEnable()
+    {
+        controller.Gameplay.Enable();
+    }
+
+    void OnDisable()
+    {
+        controller.Gameplay.Disable();
     }
 
 }

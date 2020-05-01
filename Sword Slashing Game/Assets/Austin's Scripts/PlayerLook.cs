@@ -10,11 +10,18 @@ public class PlayerLook : MonoBehaviour
 
     [SerializeField] private Transform playerBody;
 
+    private PlayerControls controller;
+    private Vector2 controllerRotation;
+
     private float xAxisClamp;
 
     private void Awake()
     {
         LockCursor();
+        controller = new PlayerControls();
+        controller.Gameplay.CameraRotation.performed += context => controllerRotation = context.ReadValue<Vector2>();
+        controller.Gameplay.CameraRotation.canceled += context => controllerRotation = Vector2.zero;
+        //controller.Gameplay.CameraRotation.performed += context => Debug.Log("moved joystick");
     }
 
     private void LockCursor()
@@ -32,7 +39,12 @@ public class PlayerLook : MonoBehaviour
         float mouseX = Input.GetAxis(mouseXInputName) * mouseSensitivity * Time.deltaTime;
         float mouseY = Input.GetAxis(mouseYInputName) * mouseSensitivity * Time.deltaTime;
 
-        xAxisClamp += mouseY;
+        float controllerX = controllerRotation.x * mouseSensitivity * Time.deltaTime;
+        float controllerY = controllerRotation.y * mouseSensitivity * Time.deltaTime;
+
+        //Debug.Log("controllerX: " + controllerX);
+
+        xAxisClamp += mouseY + controllerY;
 
         if(xAxisClamp > -18.0f)
         {
@@ -47,8 +59,8 @@ public class PlayerLook : MonoBehaviour
             ClampXAxisRotationToValue(25.0f);
         }
 
-        transform.Rotate(Vector3.left * mouseY);
-        playerBody.Rotate(Vector3.up * mouseX);
+        transform.Rotate(Vector3.left * (mouseY + controllerY));
+        playerBody.Rotate(Vector3.up * (mouseX + controllerX));
     }
 
     private void ClampXAxisRotationToValue(float value)
@@ -56,5 +68,16 @@ public class PlayerLook : MonoBehaviour
         Vector3 eulerRotation = transform.eulerAngles;
         eulerRotation.x = value;
         transform.eulerAngles = eulerRotation;
+    }
+
+    //enabling and disabling the controller inputs
+    void OnEnable()
+    {
+        controller.Gameplay.Enable();
+    }
+
+    void OnDisable()
+    {
+        controller.Gameplay.Disable();
     }
 }
